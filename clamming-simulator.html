@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HorizonXI Clamming Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sand:    #e8dfc8;
+    --sand2:   #d4c9a8;
+    --sand3:   #bfb08a;
+    --ocean:   #1a3a4a;
+    --ocean2:  #0f2535;
+    --ocean3:  #071820;
+    --teal:    #2a8a7a;
+    --teal2:   #1d6358;
+    --gold:    #c9952a;
+    --gold2:   #a67820;
+    --red:     #8a2a2a;
+    --red2:    #6b1f1f;
+    --text:    #2a1f0e;
+    --muted:   #6b5a3e;
+    --ink:     #1a1208;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--ocean3);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(42,138,122,0.15) 0%, transparent 60%),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,0.01) 2px,
+        rgba(255,255,255,0.01) 4px
+      );
+    color: var(--sand);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    padding: 3.5rem 2rem 2rem;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    display: block;
+    width: 180px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--sand3), transparent);
+    margin: 1.5rem auto 0;
+  }
+  .site-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 700;
+    color: var(--sand);
+    line-height: 1.15;
+    letter-spacing: 0.03em;
+  }
+  h1 span { color: var(--gold); }
+  .subtitle {
+    margin-top: 0.6rem;
+    color: var(--sand3);
+    font-style: italic;
+    font-size: 1rem;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+
+  /* ── Panels ── */
+  .panel {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(232,223,200,0.12);
+    border-radius: 4px;
+    padding: 1.5rem;
+    position: relative;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 1.5rem; right: 1.5rem;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(201,149,42,0.4), transparent);
+  }
+  .panel-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.25rem;
+  }
+  .full-width { grid-column: 1 / -1; }
+
+  /* ── Form controls ── */
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--sand3);
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.04em;
+  }
+  label em {
+    font-style: italic;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+  input[type="number"] {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(232,223,200,0.15);
+    border-radius: 3px;
+    color: var(--sand);
+    font-family: 'Crimson Pro', serif;
+    font-size: 1rem;
+    padding: 0.45rem 0.75rem;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type="number"]:focus {
+    outline: none;
+    border-color: rgba(201,149,42,0.5);
+  }
+
+  /* ── Threshold table ── */
+  .threshold-grid {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+  }
+  .th-header {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(201,149,42,0.2);
+  }
+  .th-label {
+    font-size: 0.85rem;
+    color: var(--sand3);
+    white-space: nowrap;
+    padding-right: 0.5rem;
+  }
+  .th-zone {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .threshold-grid input[type="number"] {
+    font-size: 0.9rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  /* ── Run button ── */
+  .run-wrap {
+    text-align: center;
+    margin: 1.5rem 0;
+  }
+  .run-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: var(--teal2);
+    border: 1px solid var(--teal);
+    color: var(--sand);
+    padding: 0.85rem 3rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    position: relative;
+    overflow: hidden;
+  }
+  .run-btn:hover { background: var(--teal); }
+  .run-btn:active { transform: scale(0.98); }
+  .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .run-btn .spinner {
+    display: none;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(232,223,200,0.3);
+    border-top-color: var(--sand);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+  .run-btn.running .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Results ── */
+  #results { display: none; }
+  #results.visible { display: block; }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  @media (max-width: 500px) { .stat-row { grid-template-columns: 1fr 1fr; } }
+
+  .stat-card {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(232,223,200,0.1);
+    border-radius: 3px;
+    padding: 1rem 1.1rem;
+    text-align: center;
+  }
+  .stat-card .stat-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+    font-family: 'Cinzel', serif;
+  }
+  .stat-card .stat-value {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--sand);
+    line-height: 1.1;
+  }
+  .stat-card .stat-value.highlight { color: var(--gold); }
+  .stat-card .stat-value.danger    { color: #c26060; }
+  .stat-card .stat-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+    font-style: italic;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(232,223,200,0.08);
+    margin: 1rem 0;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(232,223,200,0.05);
+    font-size: 0.9rem;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .dk { color: var(--muted); }
+  .detail-row .dv { color: var(--sand); font-weight: 600; }
+  .detail-row .dv.good { color: #6bbf8a; }
+  .detail-row .dv.warn { color: #c26060; }
+
+  /* ── Variance bar ── */
+  .variance-section { margin-top: 1rem; }
+  .variance-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+  .variance-bar-wrap {
+    position: relative;
+    height: 28px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(232,223,200,0.08);
+  }
+  .variance-bar-fill {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: rgba(42,138,122,0.35);
+    border-left: 2px solid rgba(42,138,122,0.6);
+    border-right: 2px solid rgba(42,138,122,0.6);
+    transition: left 0.4s, width 0.4s;
+  }
+  .variance-avg-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: var(--gold);
+    transition: left 0.4s;
+  }
+  .variance-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+    border-top: 1px solid rgba(232,223,200,0.06);
+  }
+  footer a { color: var(--teal); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  .never-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 0.75rem;
+  }
+
+  /* ── Item prices panel ── */
+  .collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+  .collapsible-header:hover .panel-title { color: var(--sand2); }
+  .collapse-arrow {
+    font-size: 0.75rem;
+    color: var(--muted);
+    transition: transform 0.25s;
+    flex-shrink: 0;
+  }
+  .collapse-arrow.open { transform: rotate(180deg); }
+  .collapsible-body { display: none; margin-top: 1.25rem; }
+  .collapsible-body.open { display: block; }
+  .item-prices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.5rem 1rem;
+  }
+  .item-price-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .item-price-row label {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--sand3);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .item-price-row input {
+    width: 80px;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.5rem;
+  }
+  .unsellable { opacity: 0.4; pointer-events: none; }
+  .price-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+  }
+  .ghost-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid rgba(232,223,200,0.2);
+    color: var(--sand3);
+    padding: 0.4rem 1rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .ghost-btn:hover { border-color: var(--sand3); color: var(--sand); }</style>
+</head>
+<body>
+
+<header>
+  <div class="site-tag">HorizonXI &mdash; Purgonorgo Isle</div>
+  <h1>Clamming <span>Simulator</span></h1>
+  <p class="subtitle">Find your optimal cashout strategy</p>
+</header>
+
+<div class="container">
+
+  <!-- ── Session Settings ── -->
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-title">Session Settings</div>
+      <div class="field">
+        <label>Simulation length <em>(hours)</em></label>
+        <input type="number" id="sim-hours" value="10" min="1" max="100" step="1">
+      </div>
+      <div class="field">
+        <label>Repetitions <em>(higher = more accurate)</em></label>
+        <input type="number" id="reps" value="200" min="10" max="2000" step="10">
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Timing</div>
+      <div class="field">
+        <label>Dig time <em>(seconds per item)</em></label>
+        <input type="number" id="dig-time" value="11" min="1" max="30" step="1">
+      </div>
+      <div class="field">
+        <label>NPC round trip <em>(seconds)</em></label>
+        <input type="number" id="travel-time" value="40" min="10" max="120" step="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Thresholds ── -->
+  <div class="panel full-width" style="margin-bottom:1.25rem">
+    <div class="panel-title">Cashout Thresholds &mdash; Gil Value in Bucket</div>
+    <div class="threshold-grid">
+      <div class="th-header">Bucket</div>
+      <div class="th-header">At 31/81/131pz+ <span class="th-zone">(Tropical Clam risk)</span></div>
+      <div class="th-header">At 40/90/140pz+ <span class="th-zone">(+Jacknife risk)</span></div>
+      <div class="th-header">At 44/94/144pz+ <span class="th-zone">(+7pz item risk)</span></div>
+
+      <div class="th-label">50pz</div>
+      <input type="number" id="t50-t1" value="10000" min="0" step="500">
+      <input type="number" id="t50-t2" value="2500"  min="0" step="500">
+      <input type="number" id="t50-t3" value="1000"  min="0" step="500">
+
+      <div class="th-label">100pz</div>
+      <input type="number" id="t100-t1" value="5000" min="0" step="500">
+      <input type="number" id="t100-t2" value="2500" min="0" step="500">
+      <input type="number" id="t100-t3" value="1500" min="0" step="500">
+
+      <div class="th-label">150pz</div>
+      <input type="number" id="t150-t1" value="5000" min="0" step="500">
+      <input type="number" id="t150-t2" value="2500" min="0" step="500">
+      <input type="number" id="t150-t3" value="1500" min="0" step="500">
+    </div>
+    <p class="never-hint">Set to <strong>0</strong> to always cash out when entering that zone &mdash; set to <strong>999999</strong> to never cash out early there.</p>
+  </div>
+
+  <!-- ── Item Prices ── -->
+  <div class="panel full-width" style="margin-bottom:1.25rem">
+    <div class="collapsible-header" onclick="togglePrices()">
+      <div class="panel-title" style="margin-bottom:0">Item Gil Values <em style="font-family:'Crimson Pro',serif;font-size:0.75rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-style:italic"> &mdash; click to expand</em></div>
+      <span class="collapse-arrow" id="prices-arrow">&#9660;</span>
+    </div>
+    <div class="collapsible-body" id="prices-body">
+      <div class="item-prices-grid" id="item-prices-grid"></div>
+      <div class="price-actions">
+        <button class="ghost-btn" onclick="resetPrices()">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Run Button ── -->
+  <div class="run-wrap">
+    <button class="run-btn" id="run-btn" onclick="runSim()">
+      <span class="spinner"></span>
+      <span class="btn-text">Run Simulation</span>
+    </button>
+  </div>
+
+  <!-- ── Results ── -->
+  <div id="results">
+    <div class="panel full-width">
+      <div class="panel-title">Results</div>
+
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-label">Gil / Hour</div>
+          <div class="stat-value highlight" id="r-gph">—</div>
+          <div class="stat-sub">average</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Gil</div>
+          <div class="stat-value" id="r-total">—</div>
+          <div class="stat-sub" id="r-total-sub">over — hours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Bucket Busts</div>
+          <div class="stat-value danger" id="r-busts">—</div>
+          <div class="stat-sub">per hour avg</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="detail-row">
+        <span class="dk">Best run</span>
+        <span class="dv good" id="r-best">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="dk">Worst run</span>
+        <span class="dv warn" id="r-worst">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="dk">Std deviation (per session)</span>
+        <span class="dv" id="r-std">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="dk">Early cashouts / hour</span>
+        <span class="dv" id="r-cashouts">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="dk">Bucket upgrades / hour</span>
+        <span class="dv" id="r-upgrades">—</span>
+      </div>
+
+      <div class="variance-section">
+        <div class="variance-label">Session outcome spread (worst → avg → best)</div>
+        <div class="variance-bar-wrap">
+          <div class="variance-bar-fill" id="v-fill"></div>
+          <div class="variance-avg-line" id="v-avg"></div>
+        </div>
+        <div class="variance-ticks">
+          <span id="v-min-label">—</span>
+          <span id="v-max-label">—</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Data from <a href="https://horizonffxi.wiki/Category:Clamming" target="_blank">HorizonXI Wiki</a> &mdash;
+  HQ gear drop rates, post-patch 1.2 &mdash;
+  Gil values: mix of vendor &amp; AH prices per Sushomi's analysis.
+  <br>Results are averages over many simulated sessions &mdash; real RNG will vary.
+</footer>
+
+<script>
+// ── Item table (HQ gear rates) ─────────────────────────────
+// [name, pz, default_gil, drop_rate, unsellable?]
+const RAW_ITEMS = [
+  ["Pebble",             7,     1, 0.206],
+  ["Bibiki Slug",        3,    10, 0.096],
+  ["Jacknife",          11,    35, 0.094],
+  ["Pamtam Kelp",        6,     7, 0.064],
+  ["Vongola Clam",       6,   192, 0.054],
+  ["Shall Shell",        6,   300, 0.051],
+  ["Fish Scales",        3,    23, 0.045],
+  ["Pugil Scales",       3,    24, 0.045],
+  ["White Sand",         7,   250, 0.025],
+  ["Seashell",           6,    30, 0.026],
+  ["Nebimonite",         6,   250, 0.024],
+  ["Hobgoblin Bread",    6,    91, 0.022],
+  ["Hobgoblin Pie",      6,   153, 0.023],
+  ["Broken Willow Rod",  6,     0, 0.020, true],
+  ["Goblin Mask",        6,   650, 0.023],
+  ["Goblin Armor",       6,   170, 0.024],
+  ["Goblin Mail",        6,  1500, 0.022],
+  ["Crab Shell",         6,   392, 0.022],
+  ["HQ Pugil Scales",    6,   260, 0.015],
+  ["Tropical Clam",     20,  5100, 0.014],
+  ["Maple Log",          6,    15, 0.013],
+  ["Titanictus Shell",   6,   357, 0.014],
+  ["Bibiki Urchin",      6,   750, 0.010],
+  ["Coral Fragment",     6,  3750, 0.009],
+  ["Turtle Shell",       6,  1190, 0.010],
+  ["Uragnite Shell",     6,  1455, 0.005],
+  ["Lacquer Tree Log",   6,  6000, 0.005],
+  ["Elm Log",            6,  4250, 0.005],
+  ["Petrified Log",      6,  3500, 0.005],
+  ["HQ Crab Shell",      6,  3312, 0.004],
+  ["Oxblood",            6, 13250, 0.005],
+];
+
+const totalRate = RAW_ITEMS.reduce((s, r) => s + r[3], 0);
+
+// Cumulative weights for fast random selection (drop rates only, static)
+const CUM = [];
+let cumAcc = 0;
+for (const item of RAW_ITEMS) { cumAcc += item[3] / totalRate; CUM.push(cumAcc); }
+
+// ── Build item price inputs ─────────────────────────────────
+function buildPriceInputs() {
+  const grid = document.getElementById('item-prices-grid');
+  grid.innerHTML = '';
+  RAW_ITEMS.forEach((item, i) => {
+    const [name, pz, defaultGil, , unsellable] = item;
+    const row = document.createElement('div');
+    row.className = 'item-price-row' + (unsellable ? ' unsellable' : '');
+    row.innerHTML = `
+      <label title="${name} (${pz}pz)">${name}</label>
+      <input type="number" id="price-${i}" value="${defaultGil}" min="0" step="1"
+             ${unsellable ? 'disabled title="Cannot be sold"' : ''}>
+    `;
+    grid.appendChild(row);
+  });
+}
+
+function resetPrices() {
+  RAW_ITEMS.forEach((item, i) => {
+    const el = document.getElementById(`price-${i}`);
+    if (el) el.value = item[2];
+  });
+}
+
+function togglePrices() {
+  const body  = document.getElementById('prices-body');
+  const arrow = document.getElementById('prices-arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function getCurrentGilValues() {
+  return RAW_ITEMS.map((item, i) => {
+    const el = document.getElementById(`price-${i}`);
+    return el ? (parseFloat(el.value) || 0) : item[2];
+  });
+}
+
+function randomDig(gilValues) {
+  const r = Math.random();
+  let lo = 0, hi = CUM.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (CUM[mid] < r) lo = mid + 1; else hi = mid;
+  }
+  return [RAW_ITEMS[lo][1], gilValues[lo]]; // [pz, gil]
+}
+
+buildPriceInputs();
+
+// ── Bucket chain ────────────────────────────────────────────
+const BUCKETS = [[50, 45], [100, 95], [150, 145]];
+
+function getZones(cap) {
+  return [cap - 19, cap - 10, cap - 6];
+}
+
+function shouldCashOut(cap, bpz, bgil, thresholds) {
+  const [t1, t2, t3] = getZones(cap);
+  let zone = null;
+  if      (bpz >= t3) zone = "T3";
+  else if (bpz >= t2) zone = "T2";
+  else if (bpz >= t1) zone = "T1";
+  if (!zone) return false;
+  const thresh = thresholds[`${cap}-${zone}`] ?? 999999;
+  return bgil >= thresh;
+}
+
+// ── Single session ──────────────────────────────────────────
+function runSession(totalSeconds, DIG_TIME, TRAVEL_TIME, BUCKET_COST, thresholds, gilValues) {
+  let elapsed = 0, netGil = 0, gilSpent = BUCKET_COST;
+  let busts = 0, cashouts = 0, upgrades = 0;
+  let bpz = 0, bgil = 0, bidx = 0;
+  let [cap, utr] = BUCKETS[bidx];
+  let firstDig = true;
+
+  while (elapsed < totalSeconds) {
+    if (!firstDig) {
+      if (elapsed + DIG_TIME > totalSeconds) break;
+      elapsed += DIG_TIME;
+    }
+    firstDig = false;
+
+    const [pz, gil] = randomDig(gilValues);
+
+    if (bpz + pz > cap) {
+      if (elapsed + TRAVEL_TIME > totalSeconds) break;
+      elapsed += TRAVEL_TIME;
+      gilSpent += BUCKET_COST;
+      busts++;
+      bpz = 0; bgil = 0; bidx = 0;
+      [cap, utr] = BUCKETS[bidx];
+      firstDig = true;
+      continue;
+    }
+
+    bpz += pz; bgil += gil;
+
+    if (bpz >= utr) {
+      if (elapsed + TRAVEL_TIME > totalSeconds) { netGil += bgil; break; }
+      elapsed += TRAVEL_TIME;
+      if (bidx < BUCKETS.length - 1) {
+        bidx++; [cap, utr] = BUCKETS[bidx]; upgrades++; firstDig = true;
+      } else {
+        netGil += bgil; gilSpent += BUCKET_COST; cashouts++;
+        bpz = 0; bgil = 0; bidx = 0; [cap, utr] = BUCKETS[bidx]; firstDig = true;
+      }
+      continue;
+    }
+
+    if (shouldCashOut(cap, bpz, bgil, thresholds)) {
+      if (elapsed + TRAVEL_TIME > totalSeconds) { netGil += bgil; break; }
+      elapsed += TRAVEL_TIME;
+      netGil += bgil; gilSpent += BUCKET_COST; cashouts++;
+      bpz = 0; bgil = 0; bidx = 0; [cap, utr] = BUCKETS[bidx]; firstDig = true;
+    }
+  }
+
+  return [netGil - gilSpent, busts, cashouts, upgrades];
+}
+
+// ── Format helpers ──────────────────────────────────────────
+function fmt(n)  { return Math.round(n).toLocaleString(); }
+function fmtD(n) { return n.toFixed(2); }
+
+// ── Main run ────────────────────────────────────────────────
+function runSim() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.classList.add('running');
+  btn.querySelector('.btn-text').textContent = 'Simulating\u2026';
+
+  const hours       = Math.max(1,  parseFloat(document.getElementById('sim-hours').value)   || 10);
+  const reps        = Math.max(10, parseInt(document.getElementById('reps').value)           || 200);
+  const DIG_TIME    = Math.max(1,  parseInt(document.getElementById('dig-time').value)       || 11);
+  const TRAVEL      = Math.max(5,  parseInt(document.getElementById('travel-time').value)    || 40);
+  const BUCKET_COST = 500;
+
+  const thresholds = {
+    "50-T1":  parseFloat(document.getElementById('t50-t1').value)  || 0,
+    "50-T2":  parseFloat(document.getElementById('t50-t2').value)  || 0,
+    "50-T3":  parseFloat(document.getElementById('t50-t3').value)  || 0,
+    "100-T1": parseFloat(document.getElementById('t100-t1').value) || 0,
+    "100-T2": parseFloat(document.getElementById('t100-t2').value) || 0,
+    "100-T3": parseFloat(document.getElementById('t100-t3').value) || 0,
+    "150-T1": parseFloat(document.getElementById('t150-t1').value) || 0,
+    "150-T2": parseFloat(document.getElementById('t150-t2').value) || 0,
+    "150-T3": parseFloat(document.getElementById('t150-t3').value) || 0,
+  };
+
+  const gilValues    = getCurrentGilValues();
+  const totalSeconds = hours * 3600;
+
+  setTimeout(() => {
+    const gilArr = [], bustArr = [], cashArr = [], upgArr = [];
+
+    for (let i = 0; i < reps; i++) {
+      const [g, b, c, u] = runSession(totalSeconds, DIG_TIME, TRAVEL, BUCKET_COST, thresholds, gilValues);
+      gilArr.push(g); bustArr.push(b); cashArr.push(c); upgArr.push(u);
+    }
+
+    const avg     = v => v.reduce((a, b) => a + b, 0) / v.length;
+    const avgGil  = avg(gilArr);
+    const avgBust = avg(bustArr);
+    const avgCash = avg(cashArr);
+    const avgUpg  = avg(upgArr);
+    const minGil  = Math.min(...gilArr);
+    const maxGil  = Math.max(...gilArr);
+    const std     = Math.sqrt(avg(gilArr.map(g => (g - avgGil) ** 2)));
+    const gph     = avgGil / hours;
+
+    document.getElementById('r-gph').textContent       = fmt(gph) + 'g';
+    document.getElementById('r-total').textContent     = fmt(avgGil) + 'g';
+    document.getElementById('r-total-sub').textContent = `over ${hours} hour${hours === 1 ? '' : 's'}`;
+    document.getElementById('r-busts').textContent     = fmtD(avgBust / hours);
+    document.getElementById('r-best').textContent      = fmt(maxGil) + 'g';
+    document.getElementById('r-worst').textContent     = fmt(minGil) + 'g';
+    document.getElementById('r-std').textContent       = '\u00b1' + fmt(std) + 'g';
+    document.getElementById('r-cashouts').textContent  = fmtD(avgCash / hours);
+    document.getElementById('r-upgrades').textContent  = fmtD(avgUpg / hours);
+
+    const range  = maxGil - minGil || 1;
+    const avgPct = ((avgGil - minGil) / range * 100).toFixed(1);
+    document.getElementById('v-fill').style.left  = '0%';
+    document.getElementById('v-fill').style.width = '100%';
+    document.getElementById('v-avg').style.left   = avgPct + '%';
+    document.getElementById('v-min-label').textContent = fmt(minGil) + 'g';
+    document.getElementById('v-max-label').textContent = fmt(maxGil) + 'g';
+
+    document.getElementById('results').classList.add('visible');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    btn.disabled = false;
+    btn.classList.remove('running');
+    btn.querySelector('.btn-text').textContent = 'Run Simulation';
+  }, 30);
+}
+</script>
+</body>
+</html>
